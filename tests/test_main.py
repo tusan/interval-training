@@ -33,8 +33,9 @@ def test_get_interval(tune, interval, alteration, expected):
             "G#",
             2,
             "",
-            "Provide only tunes from circle of fifth: dict_keys(['C', 'G', 'D', 'A', "
-            "'E', 'B', 'Cb', 'F#', 'Gb', 'Db', 'C#', 'Ab', 'Eb', 'Bb', 'F'])",
+            "Provide only tunes from circle of fifth: dict_keys(["
+            "'C', 'G', 'F', 'D', 'Bb', 'A', 'Eb', 'E', 'Ab', 'B', 'Db', 'F#', 'Gb', 'Cb', 'C#'"
+            "])",
         ),
     ],
 )

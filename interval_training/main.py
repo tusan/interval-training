@@ -5,19 +5,19 @@ import click
 CIRCLE_OF_FIFTH_MAJOR_SCALES = {
     "C": ["C", "D", "E", "F", "G", "A", "B"],
     "G": ["G", "A", "B", "C", "D", "E", "F#"],
+    "F": ["F", "G", "A", "Bb", "C", "D", "E"],
     "D": ["D", "E", "F#", "G", "A", "B", "C#"],
+    "Bb": ["Bb", "C", "D", "Eb", "F", "G", "A"],
     "A": ["A", "B", "C#", "D", "E", "F#", "G#"],
+    "Eb": ["Eb", "F", "G", "Ab", "Bb", "C", "D"],
     "E": ["E", "F#", "G#", "A", "B", "C#", "D#"],
+    "Ab": ["Ab", "Bb", "C", "Db", "Eb", "F", "G"],
     "B": ["B", "C#", "D#", "E", "F#", "G#", "A#"],
-    "Cb": ["Cb", "Db", "Eb", "Fb", "Gb", "Ab", "Bb"],
+    "Db": ["Db", "Eb", "F", "Gb", "Ab", "Bb", "C"],
     "F#": ["F#", "G#", "A#", "B", "C#", "D#", "E#"],
     "Gb": ["Gb", "Ab", "Bb", "Cb", "Db", "Eb", "F"],
-    "Db": ["Db", "Eb", "F", "Gb", "Ab", "Bb", "C"],
+    "Cb": ["Cb", "Db", "Eb", "Fb", "Gb", "Ab", "Bb"],
     "C#": ["C#", "D#", "E#", "F#", "G#", "A#", "B#"],
-    "Ab": ["Ab", "Bb", "C", "Db", "Eb", "F", "G"],
-    "Eb": ["Eb", "F", "G", "Ab", "Bb", "C", "D"],
-    "Bb": ["Bb", "C", "D", "Eb", "F", "G", "A"],
-    "F": ["F", "G", "A", "Bb", "C", "D", "E"],
 }
 
 INTERVALS = [*range(1, 10), 11, 13]
@@ -48,19 +48,67 @@ def get_interval(tune: str, interval: int, alteration: str) -> str:
     )
 
 
-def format_row(row: dict[str, str]) -> list[str]:
-    return [f"{interval}{alteration}" for interval, alteration in row.items()]
+class QuestionTracker:
+    def __init__(self):
+        self.__correct_count = 0
+        self.__wrong_answers = []
+
+    def right(self):
+        self.__correct_count += 1
+
+    def wrong(self, question: str, answer: str, correct_answer: str):
+        self.__wrong_answers.append((question, answer, correct_answer))
+
+    def stats(self) -> str:
+        return f"RESULT:\n{self.__correct_count} correct answers\nWrong answers:\n{'\n'.join([
+            f"question {question}, answer {answer} but was {correct_answer}"
+            for question, answer, correct_answer in self.__wrong_answers
+        ])}"
 
 
-def build_questions(include_alterations: bool) -> tuple[int, str]:
-    return (
-        random.choices(INTERVALS)[0],
-        (
-            random.choices(ALTERATIONS, weights=ALTERATIONS_WEIGHT)[0]
-            if include_alterations
-            else ""
-        ),
-    )
+class QuestionBuilder:
+    def __init__(self, tune: str, include_alterations: bool):
+        self.__include_alterations = include_alterations
+        self.__tune = tune
+
+        self.__question_tracker = QuestionTracker()
+        self.__already_seen = {}
+
+    def build_question(self) -> tuple[int, str]:
+        return (
+            random.choices(INTERVALS)[0],
+            (
+                random.choices(ALTERATIONS, weights=ALTERATIONS_WEIGHT)[0]
+                if self.__include_alterations
+                else ""
+            ),
+        )
+
+    def register_answer(self, interval: int, alteration: str, answer: str) -> None:
+        correct_answer = get_interval(self.__tune, interval, alteration)
+
+        if answer == correct_answer:
+            self.__question_tracker.right()
+        else:
+            self.__question_tracker.wrong(
+                f"{interval}{alteration}", answer, correct_answer
+            )
+
+    def finalize(self) -> str:
+        return self.__question_tracker.stats()
+
+
+def interval_training(count: int, tune: str, include_alterations: bool) -> None:
+    question_builder = QuestionBuilder(tune, include_alterations)
+
+    print(f"Tune: {tune}")
+    try:
+        for i in range(1, count + 1):
+            interval, alteration = question_builder.build_question()
+            answer = click.prompt(f"{interval}{alteration}th")
+            question_builder.register_answer(interval, alteration, answer)
+    finally:
+        print(question_builder.finalize())
 
 
 @click.command()
@@ -71,7 +119,10 @@ def build_questions(include_alterations: bool) -> tuple[int, str]:
 )
 @click.option("--count", prompt="How many questions", default=20)
 @click.option(
-    "--include-alterations", prompt="Include interval outside major scale", is_flag=True, default=True
+    "--include-alterations",
+    prompt="Include interval outside major scale",
+    is_flag=True,
+    default=True,
 )
 def main(tune: str, count: int, include_alterations: bool):
     if tune not in CIRCLE_OF_FIFTH_MAJOR_SCALES:
@@ -80,43 +131,6 @@ def main(tune: str, count: int, include_alterations: bool):
         )
 
     interval_training(count, tune, include_alterations)
-
-
-class QuestionTracker:
-    def __init__(self):
-        self.__correct_count = 0
-        self.__wrong_answers = []
-
-    def correct(self):
-        self.__correct_count += 1
-
-    def wrong(self, question: str, answer: str, correct_answer: str):
-        self.__wrong_answers.append((question, answer, correct_answer))
-
-    def print_stats(self):
-        print("RESULT:")
-        print(f"{self.__correct_count} correct answers")
-        print("wrong answer:")
-
-        for question, answer, correct_answer in self.__wrong_answers:
-            print(f"question {question}, answer {answer} but was {correct_answer}")
-
-
-def interval_training(count: int, tune: str, include_alterations: bool) -> None:
-    question_tracker = QuestionTracker()
-
-    try:
-        for i in range(1, count + 1):
-            interval, alteration = build_questions(include_alterations)
-            answer = click.prompt(f"{interval}{alteration}")
-            correct_answer = get_interval(tune, interval, alteration)
-
-            if answer == correct_answer:
-                question_tracker.correct()
-            else:
-                question_tracker.wrong(f"{interval}{alteration}", answer, correct_answer)
-    finally:
-        question_tracker.print_stats()
 
 
 if __name__ == "__main__":
