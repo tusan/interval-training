@@ -1,4 +1,5 @@
 import random
+from collections import deque
 
 import click
 
@@ -60,10 +61,11 @@ class QuestionTracker:
         self.__wrong_answers.append((question, answer, correct_answer))
 
     def stats(self) -> str:
-        return f"RESULT:\n{self.__correct_count} correct answers\nWrong answers:\n{'\n'.join([
-            f"question {question}, answer {answer} but was {correct_answer}"
+        result = f"\nRESULT:\n{self.__correct_count} correct answers\n\n"
+        return f"{result}Wrong answers:\n{'\n'.join([
+            f"question {question}th, answer {answer} but was {correct_answer}"
             for question, answer, correct_answer in self.__wrong_answers
-        ])}"
+        ])}" if self.__wrong_answers else result
 
 
 class QuestionBuilder:
@@ -72,9 +74,18 @@ class QuestionBuilder:
         self.__tune = tune
 
         self.__question_tracker = QuestionTracker()
-        self.__already_seen = {}
+        self.__already_seen = deque(maxlen=7)
 
     def build_question(self) -> tuple[int, str]:
+        for i in range(0, 100):
+            interval, alteration = self.__build_question()
+            k = f"{interval}{alteration}"
+            if k not in self.__already_seen:
+                self.__already_seen.append(k)
+                return interval, alteration
+        raise ValueError("Seems you already checked all the possibility")
+
+    def __build_question(self) -> tuple[int, str]:
         return (
             random.choices(INTERVALS)[0],
             (
@@ -83,6 +94,7 @@ class QuestionBuilder:
                 else ""
             ),
         )
+
 
     def register_answer(self, interval: int, alteration: str, answer: str) -> None:
         correct_answer = get_interval(self.__tune, interval, alteration)
