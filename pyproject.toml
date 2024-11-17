@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "interval-training"
+version = "1.0.0"
+description = "A simple tool to practice music interval memorization"
+authors = ["Santolo Tubelli <tubelli.santolo@gmail.com>"]
+readme = "README.md"
+license = "Apache-2.0"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+click = "^8.1.7"
+pytest = "^8.3.3"
+black = "^24.10.0"
+
+[tool.poetry.scripts]
+interval-training = "interval_training.main:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
