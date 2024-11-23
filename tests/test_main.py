@@ -20,7 +20,6 @@ from interval_training.main import get_interval
         ('C', 9, '', 'D'),
         ('C', 11, '', 'F'),
         ('C', 13, '', 'A'),
-        ('A', 6, 'x', 'Fx#'),
     ],
 )
 def test_get_interval(tune, interval, alteration, expected):
@@ -42,6 +41,8 @@ def test_get_interval(tune, interval, alteration, expected):
             "'C', 'G', 'F', 'D', 'Bb', 'A', 'Eb', 'E', 'Ab', 'B', 'Db', 'F#', 'Gb', 'Cb', 'C#'"
             '])',
         ),
+        ('A', 6, 'x', "F#x is not a valid interval"),
+
     ],
 )
 def test_get_interval_errors(tune, interval, alteration, expected):

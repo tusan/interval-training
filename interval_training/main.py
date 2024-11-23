@@ -26,10 +26,19 @@ CIRCLE_OF_FIFTH_MAJOR_SCALES = {
 INTERVALS = [*range(1, 9), 9, 11, 13]
 
 ALTERATIONS = ['', 'b', '#', 'bb', 'x']
-ALTERATIONS_WEIGHT = [100, 20, 20, 2, 2]
+ALTERATIONS_WEIGHT = [100, 50, 50, 10, 10]
 
 
 def get_interval(tune: str, interval: int, alteration: str) -> str:
+    def validate_interval(intv: str) -> bool:
+        if intv.count("b") + intv.count("#") > 2:
+            return False
+
+        if "x#" in intv or "#x" in intv:
+            return False
+
+        return True
+
     if tune not in CIRCLE_OF_FIFTH_MAJOR_SCALES:
         raise ValueError(
             f"Provide only tunes from circle of fifth:"
@@ -38,18 +47,18 @@ def get_interval(tune: str, interval: int, alteration: str) -> str:
     if interval not in INTERVALS:
         raise ValueError(f"Accepted intervals: {INTERVALS}")
 
-    correct_interval = CIRCLE_OF_FIFTH_MAJOR_SCALES[tune][(interval - 1) % 7]
-
-    return (
-        (
-            f"{correct_interval}{alteration}".replace('##', 'x')
-            .replace('#b', '')
-            .replace('b#', '')
-            .replace('#x', 'x#')
-        )
-        if alteration
-        else correct_interval
+    major_interval = CIRCLE_OF_FIFTH_MAJOR_SCALES[tune][(interval - 1) % 7]
+    complete_interval = (
+        f"{major_interval}{alteration}"
+        .replace('##', 'x')
+        .replace('#b', '')
+        .replace('b#', '')
     )
+
+    if not validate_interval(complete_interval):
+        raise ValueError(f"{complete_interval} is not a valid interval")
+
+    return complete_interval
 
 
 class QuestionTracker:
@@ -66,10 +75,10 @@ class QuestionTracker:
     def stats(self) -> str:
         result = f"\nRESULT:\n{self.__correct_count} correct answers\n\n"
         return f"{result}Wrong answers:\n{
-            '\n'.join([
-                f"question {question} th, answer {answer} but was {correct_answer}"
-                for question, answer, correct_answer in self.__wrong_answers
-            ])
+        '\n'.join([
+            f"question {question} th, answer {answer} but was {correct_answer}"
+            for question, answer, correct_answer in self.__wrong_answers
+        ])
         }" if self.__wrong_answers else result
 
 
@@ -80,6 +89,9 @@ class QuestionBuilder:
 
         self.__question_tracker = QuestionTracker()
         self.__already_seen: deque = deque(maxlen=7)
+
+    def __is_valid_question(self, interval: int, alteration: int):
+        get_interval(interval, alteration)
 
     def build_question(self) -> tuple[int, str]:
         interval, alteration = self.__build_question()
