@@ -9,11 +9,12 @@ license = "Apache-2.0"
 [tool.poetry.dependencies]
 python = "^3.12"
 click = "^8.1.7"
-pytest = "^8.3.3"
-black = "^24.10.0"
 
 [tool.poetry.scripts]
 interval-training = "interval_training.main:main"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.3"
 
 [build-system]
 requires = ["poetry-core"]
