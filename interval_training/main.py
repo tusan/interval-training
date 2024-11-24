@@ -1,168 +1,40 @@
 from __future__ import annotations
 
 import random
-from collections import deque
-
 import click
-
-CIRCLE_OF_FIFTH_MAJOR_SCALES = {
-    'C': ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
-    'G': ['G', 'A', 'B', 'C', 'D', 'E', 'F#'],
-    'F': ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
-    'D': ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'],
-    'Bb': ['Bb', 'C', 'D', 'Eb', 'F', 'G', 'A'],
-    'A': ['A', 'B', 'C#', 'D', 'E', 'F#', 'G#'],
-    'Eb': ['Eb', 'F', 'G', 'Ab', 'Bb', 'C', 'D'],
-    'E': ['E', 'F#', 'G#', 'A', 'B', 'C#', 'D#'],
-    'Ab': ['Ab', 'Bb', 'C', 'Db', 'Eb', 'F', 'G'],
-    'B': ['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'],
-    'Db': ['Db', 'Eb', 'F', 'Gb', 'Ab', 'Bb', 'C'],
-    'F#': ['F#', 'G#', 'A#', 'B', 'C#', 'D#', 'E#'],
-    'Gb': ['Gb', 'Ab', 'Bb', 'Cb', 'Db', 'Eb', 'F'],
-    'Cb': ['Cb', 'Db', 'Eb', 'Fb', 'Gb', 'Ab', 'Bb'],
-    'C#': ['C#', 'D#', 'E#', 'F#', 'G#', 'A#', 'B#'],
-}
-
-INTERVALS = [*range(1, 9), 9, 11, 13]
-
-ALTERATIONS = ['', 'b', '#', 'bb', 'x']
-ALTERATIONS_WEIGHT = [100, 50, 50, 10, 10]
+from interval_training.lib import QuestionBuilder, MAJOR_SCALES, Answer
 
 
-def get_interval(tune: str, interval: int, alteration: str) -> str:
-    def validate_interval(intv: str) -> bool:
-        if intv.count("b") + intv.count("#") > 2:
-            return False
-
-        if "x#" in intv or "#x" in intv:
-            return False
-
-        return True
-
-    if tune not in CIRCLE_OF_FIFTH_MAJOR_SCALES:
-        raise ValueError(
-            f"Provide only tunes from circle of fifth:"
-            f" {CIRCLE_OF_FIFTH_MAJOR_SCALES.keys()}",
-        )
-    if interval not in INTERVALS:
-        raise ValueError(f"Accepted intervals: {INTERVALS}")
-
-    major_interval = CIRCLE_OF_FIFTH_MAJOR_SCALES[tune][(interval - 1) % 7]
-    complete_interval = (
-        f"{major_interval}{alteration}"
-        .replace('##', 'x')
-        .replace('#b', '')
-        .replace('b#', '')
-    )
-
-    if not validate_interval(complete_interval):
-        raise ValueError(f"{complete_interval} is not a valid interval")
-
-    return complete_interval
-
-
-class QuestionTracker:
-    def __init__(self):
-        self.__correct_count = 0
-        self.__wrong_answers = []
-
-    def right(self):
-        self.__correct_count += 1
-
-    def wrong(self, question: str, answer: str, correct_answer: str):
-        self.__wrong_answers.append((question, answer, correct_answer))
-
-    def stats(self) -> str:
-        result = f"\nRESULT:\n{self.__correct_count} correct answers\n\n"
-        return f"{result}Wrong answers:\n{
-        '\n'.join([
-            f"question {question} th, answer {answer} but was {correct_answer}"
-            for question, answer, correct_answer in self.__wrong_answers
-        ])
-        }" if self.__wrong_answers else result
-
-
-class QuestionBuilder:
-    def __init__(self, tune: str, include_alterations: bool):
-        self.__include_alterations = include_alterations
-        self.__tune = tune
-
-        self.__question_tracker = QuestionTracker()
-        self.__already_seen: deque = deque(maxlen=7)
-
-    def __is_valid_question(self, interval: int, alteration: int):
-        get_interval(interval, alteration)
-
-    def build_question(self) -> tuple[int, str]:
-        interval, alteration = self.__build_question()
-
-        for _ in range(20, 0, -1):
-            if interval not in self.__already_seen:
-                self.__already_seen.append(interval)
-                return interval, alteration
-
-            interval, alteration = self.__build_question()
-
-        return interval, alteration
-
-    def __build_question(self) -> tuple[int, str]:
-        return (
-            random.choices(INTERVALS)[0],
-            (
-                random.choices(ALTERATIONS, weights=ALTERATIONS_WEIGHT)[0]
-                if self.__include_alterations
-                else ''
-            ),
-        )
-
-    def register_answer(self, interval: int, alteration: str, answer: str) -> None:
-        correct_answer = get_interval(self.__tune, interval, alteration)
-
-        if answer == correct_answer:
-            self.__question_tracker.right()
-        else:
-            self.__question_tracker.wrong(
-                f"{interval}{alteration}", answer, correct_answer,
-            )
-
-    def finalize(self) -> str:
-        return self.__question_tracker.stats()
-
-
-def interval_training(count: int, tune: str, include_alterations: bool) -> None:
-    question_builder = QuestionBuilder(tune, include_alterations)
+def interval_training(count: int, tune: str, exclude_alterations: bool) -> None:
+    question_builder = QuestionBuilder(tune, exclude_alterations)
 
     print(f"Tune: {tune}")
     try:
         for _ in range(1, count + 1):
-            interval, alteration = question_builder.build_question()
-            answer = click.prompt(f"{interval}{alteration} th")
-            question_builder.register_answer(interval, alteration, answer)
+            interval = question_builder.build_question()
+            answer = click.prompt(f"{interval.interval}{interval.alteration} th")
+            question_builder.register_answer(Answer(interval, answer))
     finally:
-        print(question_builder.finalize())
+        print(question_builder.stats())
 
 
 @click.command()
 @click.option(
-    '--tune',
-    prompt='Tune from circle of fifth to practice',
-    default=lambda: random.choice(list(CIRCLE_OF_FIFTH_MAJOR_SCALES)),
+    "--tune",
+    prompt="Tune to practice",
+    default=lambda: random.choice(list(MAJOR_SCALES)),
+    type=click.Choice(MAJOR_SCALES)
 )
-@click.option('--count', prompt='How many questions', default=20)
+@click.option("--count", prompt="Question count", default=20)
 @click.option(
-    '--include-alterations',
-    prompt='Include interval outside major scale',
+    "--exclude-alterations",
+    prompt="Use only diatonic intervals",
     is_flag=True,
-    default=True,
+    default=False,
 )
-def main(tune: str, count: int, include_alterations: bool):
-    if tune not in CIRCLE_OF_FIFTH_MAJOR_SCALES:
-        raise ValueError(
-            f"Provide only tunes from circle of fifth: {CIRCLE_OF_FIFTH_MAJOR_SCALES.keys()}",
-        )
-
-    interval_training(count, tune, include_alterations)
+def main(tune: str, count: int, exclude_alterations: bool):
+    interval_training(count, tune, exclude_alterations)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
