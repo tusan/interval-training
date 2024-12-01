@@ -20,6 +20,7 @@ from interval_training.lib import Interval, QuestionStats, QuestionBuilder, Answ
         ("C", 9, "", "D"),
         ("C", 11, "", "F"),
         ("C", 13, "", "A"),
+        ("Cb", 4, "x", "F#"),
     ],
 )
 def test_get_interval(tune, interval, alteration, expected):

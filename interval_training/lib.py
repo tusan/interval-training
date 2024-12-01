@@ -1,3 +1,4 @@
+import logging
 import random
 from collections import deque
 from dataclasses import dataclass
@@ -19,6 +20,8 @@ MAJOR_SCALES = {
     "Cb": ["Cb", "Db", "Eb", "Fb", "Gb", "Ab", "Bb"],
     "C#": ["C#", "D#", "E#", "F#", "G#", "A#", "B#"],
 }
+
+logger = logging.getLogger(__file__)
 
 
 class Interval:
@@ -64,7 +67,9 @@ class Interval:
             (
                 ""
                 if exclude_alterations
-                else random.choices(cls._alterations, weights=cls._alterations_weight)[0]
+                else random.choices(cls._alterations, weights=cls._alterations_weight)[
+                    0
+                ]
             ),
         )
 
@@ -90,11 +95,13 @@ class Interval:
             else False
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"{self._get_major_interval()}{self._alteration}".replace("##", "x")
             .replace("#b", "")
             .replace("b#", "")
+            .replace("bx", "#")
+            .replace("xb", "#")
         )
 
 
@@ -152,20 +159,19 @@ class QuestionBuilder:
         self._already_seen: deque[Interval] = deque(maxlen=7)
 
     def build_question(self) -> Interval:
-        interval = Interval.random(
-            self._root, exclude_alterations=self._exclude_alterations
-        )
+        for _ in range(50, 0, -1):
+            try:
+                interval = Interval.random(
+                    self._root, exclude_alterations=self._exclude_alterations
+                )
+                if interval not in self._already_seen:
+                    self._already_seen.append(interval)
+                    return interval
+            except ValueError as e:
+                logger.debug(f"Error while generating question: {e}")
+                pass
 
-        for _ in range(20, 0, -1):
-            if interval not in self._already_seen:
-                self._already_seen.append(interval)
-                return interval
-
-            interval = Interval.random(
-                self._root, exclude_alterations=self._exclude_alterations
-            )
-
-        return interval
+        raise ValueError("Error in building questions, too many attempt")
 
     def register_answer(self, answer: Answer) -> None:
         self._question_stats.register(answer)

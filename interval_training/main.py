@@ -23,7 +23,7 @@ def interval_training(count: int, tune: str, exclude_alterations: bool) -> None:
     "--tune",
     prompt="Tune to practice",
     default=lambda: random.choice(list(MAJOR_SCALES)),
-    type=click.Choice(MAJOR_SCALES)
+    type=click.Choice(MAJOR_SCALES),
 )
 @click.option("--count", prompt="Question count", default=20)
 @click.option(
