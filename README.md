@@ -1,6 +1,6 @@
 A simple tool to practice music interval memorization
 
 ``` bash
-poetry install
-pipx install {project_folder}/interval-training/dist/interval_training-{version}.tar.gz
+poetry build
+pipx install --force $(pwd)/dist/interval_training-1.1.0.tar.gz
 ```

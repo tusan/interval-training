@@ -41,9 +41,13 @@ def interval(count: int, tune: str, exclude_alterations: bool) -> None:
     click.echo(IntervalTrainingApp(count, tune, exclude_alterations).run())
 
 
-if __name__ == "__main__":
+def main():
     try:
         cli()
     except Exception as e:
         click.echo(e, file=sys.stderr)
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
