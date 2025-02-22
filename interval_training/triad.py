@@ -8,7 +8,7 @@ from interval_training.lib import (
 )
 
 
-class Chord3(Question):
+class Triad(Question):
     def __init__(self, third: Interval, fifth: Interval):
         self._third = third
         self._fifth = fifth
@@ -30,31 +30,31 @@ class Chord3(Question):
     def __eq__(self, other) -> bool:
         return (
             self._third == other._third and self._fifth == other._fifth
-            if other and isinstance(other, Chord3)
+            if other and isinstance(other, Triad)
             else False
         )
 
 
-class Chord3Answer(Answer):
-    def __init__(self, chord3: Chord3, user_answer: str):
-        self._chord3 = chord3
+class TriadAnswer(Answer):
+    def __init__(self, triad: Triad, user_answer: str):
+        self._triad = triad
         self._user_answer = user_answer
 
     def is_correct(self):
-        return str(self._chord3) == self._user_answer
+        return str(self._triad) == self._user_answer
 
     def __repr__(self) -> str:
-        return f"question {self._chord3.root}, user answer {self._user_answer} correct answer {self._chord3}"
+        return f"question {self._triad.root}, user answer {self._user_answer} correct answer {self._triad}"
 
 
-class Chord3QuestionBuilder(QuestionBuilder):
-    def build_question(self) -> Chord3:
-        return Chord3.from_root(random_scale())
+class TriadQuestionBuilder(QuestionBuilder):
+    def build_question(self) -> Triad:
+        return Triad.from_root(random_scale())
 
 
-class Chord3TrainingApp(TrainingApp):
+class TriadTrainingApp(TrainingApp):
     def _question_builder(self) -> QuestionBuilder:
-        return Chord3QuestionBuilder()
+        return TriadQuestionBuilder()
 
-    def _answer(self, question: Chord3, answer: str) -> Answer:
-        return Chord3Answer(question, answer)
+    def _answer(self, question: Triad, answer: str) -> Answer:
+        return TriadAnswer(question, answer)

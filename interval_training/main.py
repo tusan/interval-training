@@ -4,7 +4,7 @@ import sys
 
 import click
 
-from interval_training.chord3 import Chord3TrainingApp
+from interval_training.triad import TriadTrainingApp
 from interval_training.interval import IntervalTrainingApp
 from interval_training.lib import (
     MAJOR_SCALES,
@@ -19,8 +19,8 @@ def cli():
 
 @cli.command()
 @click.option("--count", prompt="Question count", default=20)
-def chord3(count: int) -> None:
-    click.echo(Chord3TrainingApp(count).run())
+def triad(count: int) -> None:
+    click.echo(TriadTrainingApp(count).run())
 
 
 @cli.command()

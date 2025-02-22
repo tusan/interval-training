@@ -15,6 +15,7 @@ interval-training = "interval_training.main:main"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.3"
+pre-commit = "^4.1.0"
 
 [build-system]
 requires = ["poetry-core"]
